@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -40,7 +41,7 @@ class FakeClient:
         self.started: dict[str, object] | None = None
         self.sent: tuple[int, str] | None = None
         self.get_messages_args: tuple[int, int] | None = None
-        self.added_handlers: list[tuple[object, object]] = []
+        self.added_handlers: list[tuple[Callable[[object], Awaitable[None]], object]] = []
 
     async def start(self, *args: object, **kwargs: object) -> object:
         self.started = {"args": args, "kwargs": kwargs}
@@ -62,7 +63,11 @@ class FakeClient:
         self.get_messages_args = (entity, limit)
         return self.messages
 
-    def add_event_handler(self, callback: object, event: object) -> None:
+    def add_event_handler(
+        self,
+        callback: Callable[[object], Awaitable[None]],
+        event: object,
+    ) -> None:
         self.added_handlers.append((callback, event))
 
 
@@ -93,7 +98,7 @@ async def test_send_message_maps_response() -> None:
         chat_id=99,
         sender_id=42,
         message="Hello",
-        date=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        date=datetime(2024, 1, 1, tzinfo=UTC),
     )
     service = TelegramService(
         TelegramConfig(api_id=1, api_hash="hash"),
@@ -121,7 +126,7 @@ async def test_recent_messages_maps_messages() -> None:
             chat_id=7,
             sender_id=8,
             message="Ping",
-            date=datetime(2024, 2, 1, tzinfo=timezone.utc),
+            date=datetime(2024, 2, 1, tzinfo=UTC),
         )
     ]
     service = TelegramService(
@@ -157,7 +162,7 @@ async def test_add_message_listener_registers_handler() -> None:
         chat_id=77,
         sender_id=9,
         message="Incoming",
-        date=datetime(2024, 3, 1, tzinfo=timezone.utc),
+        date=datetime(2024, 3, 1, tzinfo=UTC),
     )
     await callback(FakeEvent(message))
 

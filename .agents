@@ -1,6 +1,0 @@
-# tgui contributor notes
-
-- Use concise NumPy-style docstrings for all public functions, methods, and classes.
-- Keep comments brief and meaningful.
-- Prefer clear, testable boundaries and add tests for new logic.
-- Run ruff, pyright, and pytest before shipping changes.

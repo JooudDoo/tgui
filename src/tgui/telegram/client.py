@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Awaitable, Callable, Iterable, Protocol
+from typing import Protocol
 
 from telethon import TelegramClient, events
 
@@ -82,6 +83,7 @@ class TelegramClientProtocol(Protocol):
         object
             Result of the start operation.
         """
+        ...
 
     async def disconnect(self) -> None:
         """Disconnect the client.
@@ -91,8 +93,9 @@ class TelegramClientProtocol(Protocol):
         None
             Closes the client connection.
         """
+        ...
 
-    async def get_dialogs(self) -> Iterable[object]:
+    async def get_dialogs(self) -> Iterable[DialogProtocol]:
         """Fetch dialogs for the authenticated user.
 
         Returns
@@ -100,6 +103,7 @@ class TelegramClientProtocol(Protocol):
         Iterable[object]
             Dialog entries returned by Telethon.
         """
+        ...
 
     async def send_message(self, entity: int, message: str) -> object:
         """Send a Telegram message.
@@ -116,6 +120,7 @@ class TelegramClientProtocol(Protocol):
         object
             Raw message instance returned by Telethon.
         """
+        ...
 
     async def get_messages(self, entity: int, limit: int) -> Iterable[object]:
         """Fetch recent messages.
@@ -132,17 +137,34 @@ class TelegramClientProtocol(Protocol):
         Iterable[object]
             Messages returned by Telethon.
         """
+        ...
 
-    def add_event_handler(self, callback: object, event: object) -> None:
+    def add_event_handler(
+        self,
+        callback: Callable[[object], Awaitable[None]],
+        event: object,
+    ) -> None:
         """Register an event handler.
 
         Parameters
         ----------
-        callback : object
+        callback : Callable[[object], Awaitable[None]]
             Callable invoked for the event.
         event : object
             Event class or instance.
         """
+        ...
+
+
+class DialogProtocol(Protocol):
+    """Protocol for the dialog attributes used in summaries."""
+
+    id: int
+    title: str
+    unread_count: int
+    is_user: bool
+    is_group: bool
+    is_channel: bool
 
 
 @dataclass
@@ -274,7 +296,10 @@ class TelegramService:
             Recent messages in the chat.
         """
         messages = await self._client.get_messages(chat_id, limit=limit)
-        return [self._message_to_envelope(message, chat_id_override=chat_id) for message in messages]
+        return [
+            self._message_to_envelope(message, chat_id_override=chat_id)
+            for message in messages
+        ]
 
     def add_message_listener(self, handler: MessageHandler) -> None:
         """Register a handler for incoming messages.
@@ -291,15 +316,15 @@ class TelegramService:
 
         self._client.add_event_handler(_wrapper, events.NewMessage())
 
-    def _dialog_to_summary(self, dialog: object) -> ChatSummary:
+    def _dialog_to_summary(self, dialog: DialogProtocol) -> ChatSummary:
         """Convert a Telethon dialog to a summary."""
         return ChatSummary(
-            chat_id=int(getattr(dialog, "id")),
-            title=str(getattr(dialog, "title", "")),
-            unread_count=int(getattr(dialog, "unread_count", 0)),
-            is_user=bool(getattr(dialog, "is_user", False)),
-            is_group=bool(getattr(dialog, "is_group", False)),
-            is_channel=bool(getattr(dialog, "is_channel", False)),
+            chat_id=int(dialog.id),
+            title=str(dialog.title),
+            unread_count=int(dialog.unread_count),
+            is_user=bool(dialog.is_user),
+            is_group=bool(dialog.is_group),
+            is_channel=bool(dialog.is_channel),
         )
 
     def _message_to_envelope(
