@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from inspect import isawaitable
-from typing import Protocol
+from typing import Protocol, TypeAlias
 
 from telethon import TelegramClient, events
 
@@ -191,6 +191,9 @@ class DialogProtocol(Protocol):
     is_channel: bool
 
 
+TelegramClientLike: TypeAlias = TelegramClientProtocol | TelegramClient
+
+
 @dataclass
 class TelegramConfig:
     """Configuration values for Telethon.
@@ -216,7 +219,7 @@ class TelegramService:
     def __init__(
         self,
         config: TelegramConfig,
-        client: TelegramClientProtocol | None = None,
+        client: TelegramClientLike | None = None,
     ) -> None:
         """Initialize the Telegram service.
 
@@ -224,10 +227,10 @@ class TelegramService:
         ----------
         config : TelegramConfig
             Configuration for the Telethon client.
-        client : TelegramClientProtocol | None
+        client : TelegramClientLike | None
             Optional client override, intended for testing.
         """
-        self._client: TelegramClientProtocol = client or TelegramClient(
+        self._client: TelegramClientLike = client or TelegramClient(
             config.session_name,
             config.api_id,
             config.api_hash,
@@ -273,7 +276,7 @@ class TelegramService:
         await self._client.disconnect()
 
     @property
-    def client(self) -> TelegramClientProtocol:
+    def client(self) -> TelegramClientLike:
         """Return the raw Telethon client instance."""
         return self._client
 

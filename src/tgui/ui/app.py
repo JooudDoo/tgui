@@ -101,10 +101,6 @@ class TguiApp(App[None]):
         self.state = AppState()
         self._settings: AppSettings | None = None
         self._telegram: TelegramService | None = None
-        self.install_screen(AuthScreen(), name="auth")
-        self.install_screen(SettingsScreen(), name="settings")
-        self.install_screen(ChatScreen(), name="chat")
-        self.push_screen("auth")
 
     def on_mount(self) -> None:
         """Initialize settings and show the first screen."""
