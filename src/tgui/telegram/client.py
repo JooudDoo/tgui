@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from inspect import isawaitable
 from typing import Protocol, TypeAlias
 
 from telethon import TelegramClient, events
@@ -80,7 +79,7 @@ class TelegramClientProtocol(Protocol):
         first_name: str = "New User",
         last_name: str = "",
         max_attempts: int = 3,
-    ) -> object | Awaitable[object]:
+    ) -> object | Awaitable[object] | None:
         """Start the client session.
 
         Parameters
@@ -146,7 +145,11 @@ class TelegramClientProtocol(Protocol):
         """
         ...
 
-    async def get_messages(self, entity: int, limit: int) -> Iterable[object]:
+    async def get_messages(
+        self,
+        entity: int,
+        limit: int,
+    ) -> Iterable[object] | object | None:
         """Fetch recent messages.
 
         Parameters
@@ -158,7 +161,7 @@ class TelegramClientProtocol(Protocol):
 
         Returns
         -------
-        Iterable[object]
+        Iterable[object] | object | None
             Messages returned by Telethon.
         """
         ...
@@ -262,14 +265,21 @@ class TelegramService:
         None
             Starts the connection and handles authorization.
         """
-        maybe_result = self._client.start(
-            phone=phone or "",
-            password=password or "",
-            bot_token=bot_token or "",
-            code_callback=code_callback,
-        )
-        if isawaitable(maybe_result):
-            await maybe_result
+        if code_callback is None:
+            result = self._client.start(
+                phone=phone or "",
+                password=password or "",
+                bot_token=bot_token or "",
+            )
+        else:
+            result = self._client.start(
+                phone=phone or "",
+                password=password or "",
+                bot_token=bot_token or "",
+                code_callback=code_callback,
+            )
+        if isinstance(result, Awaitable):
+            await result
 
     async def disconnect(self) -> None:
         """Disconnect the Telethon client session."""
@@ -325,9 +335,10 @@ class TelegramService:
             Recent messages in the chat.
         """
         messages = await self._client.get_messages(chat_id, limit=limit)
+        normalized = self._normalize_messages(messages)
         return [
             self._message_to_envelope(message, chat_id_override=chat_id)
-            for message in messages
+            for message in normalized
         ]
 
     def add_message_listener(self, handler: MessageHandler) -> None:
@@ -373,3 +384,22 @@ class TelegramService:
             text=str(getattr(message, "message", "")),
             sent_at=getattr(message, "date", None),
         )
+
+    def _normalize_messages(self, messages: Iterable[object] | object | None) -> list[object]:
+        """Normalize Telethon message responses into a list.
+
+        Parameters
+        ----------
+        messages : Iterable[object] | object | None
+            Raw messages from the client.
+
+        Returns
+        -------
+        list[object]
+            Normalized message list.
+        """
+        if messages is None:
+            return []
+        if isinstance(messages, Iterable):
+            return list(messages)
+        return [messages]

@@ -101,6 +101,7 @@ class TguiApp(App[None]):
         self.state = AppState()
         self._settings: AppSettings | None = None
         self._telegram: TelegramService | None = None
+        self.push_screen(self.DEFAULT_SCREEN)
 
     def on_mount(self) -> None:
         """Initialize settings and show the first screen."""
