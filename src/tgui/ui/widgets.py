@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Input, OptionList, Static
@@ -28,7 +30,7 @@ class MenuPanel(Static):
 class ChatList(OptionList):
     """Option list for available chats."""
 
-    def __init__(self, **kwargs: object) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the chat list widget.
 
         Parameters

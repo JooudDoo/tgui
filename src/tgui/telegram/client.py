@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
+from inspect import isawaitable
 from typing import Protocol
 
 from telethon import TelegramClient, events
@@ -68,18 +69,18 @@ class MessageEnvelope:
 class TelegramClientProtocol(Protocol):
     """Protocol for the subset of Telethon used by the service."""
 
-    async def start(
+    def start(
         self,
-        phone: Callable[[], str] | str | None = ...,
-        password: Callable[[], str] | str | None = ...,
+        phone: Callable[[], str] | str = ...,
+        password: Callable[[], str] | str = ...,
         *,
-        bot_token: str | None = None,
+        bot_token: str = "",
         force_sms: bool = False,
         code_callback: Callable[[], str | int] | None = None,
         first_name: str = "New User",
         last_name: str = "",
         max_attempts: int = 3,
-    ) -> object:
+    ) -> object | Awaitable[object]:
         """Start the client session.
 
         Parameters
@@ -88,7 +89,7 @@ class TelegramClientProtocol(Protocol):
             Phone number or callable that returns it.
         password : Callable[[], str] | str, optional
             Password or callable that returns it.
-        bot_token : str | None, optional
+        bot_token : str, optional
             Bot token to authenticate as a bot.
         force_sms : bool, optional
             Force SMS verification.
@@ -103,7 +104,7 @@ class TelegramClientProtocol(Protocol):
 
         Returns
         -------
-        object
+        object | Awaitable[object]
             Result of the start operation.
         """
         ...
@@ -258,12 +259,14 @@ class TelegramService:
         None
             Starts the connection and handles authorization.
         """
-        await self._client.start(
-            phone=phone,
+        maybe_result = self._client.start(
+            phone=phone or "",
+            password=password or "",
+            bot_token=bot_token or "",
             code_callback=code_callback,
-            password=password,
-            bot_token=bot_token,
         )
+        if isawaitable(maybe_result):
+            await maybe_result
 
     async def disconnect(self) -> None:
         """Disconnect the Telethon client session."""
