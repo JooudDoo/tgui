@@ -36,6 +36,13 @@ class AuthPayload:
 class TguiApp(App[None]):
     """Main Textual application shell."""
 
+    SCREENS = {
+        "auth": AuthScreen,
+        "settings": SettingsScreen,
+        "chat": ChatScreen,
+    }
+    DEFAULT_SCREEN = "auth"
+
     CSS = """
     Screen {
         layout: vertical;
@@ -97,20 +104,18 @@ class TguiApp(App[None]):
 
     def on_mount(self) -> None:
         """Initialize settings and show the first screen."""
-        self.install_screen(SettingsScreen(), name="settings")
-        self.install_screen(AuthScreen(), name="auth")
         try:
             self._settings = load_settings(os.environ)
         except ValueError:
-            self.push_screen("settings")
+            self.switch_screen("settings")
             return
 
         self._telegram = TelegramService(self._settings.to_telegram_config())
-        self.push_screen("auth")
+        self.switch_screen("auth")
 
     def action_open_settings(self) -> None:
         """Open the settings screen."""
-        self.push_screen("settings")
+        self.switch_screen("settings")
 
     def action_refresh(self) -> None:
         """Refresh chat list from Telegram."""
@@ -163,8 +168,7 @@ class TguiApp(App[None]):
 
     def _show_chat(self) -> None:
         if self.get_screen("chat") is None:
-            self.install_screen(ChatScreen(), name="chat")
-            self.push_screen("chat")
+            self.switch_screen("chat")
         else:
             self.switch_screen("chat")
 
@@ -176,7 +180,7 @@ class TguiApp(App[None]):
             self.run_worker(self._authenticate(payload), exclusive=True)
             return
         if button_id == "auth-settings":
-            self.push_screen("settings")
+            self.switch_screen("settings")
             return
         if button_id == "settings-cancel":
             self.pop_screen()
@@ -188,7 +192,7 @@ class TguiApp(App[None]):
             self.run_worker(self._refresh_dialogs())
             return
         if button_id == "menu-settings":
-            self.push_screen("settings")
+            self.switch_screen("settings")
             return
         if button_id == "menu-quit":
             self.exit()
@@ -230,9 +234,7 @@ class TguiApp(App[None]):
         self._settings = AppSettings(api_id=api_id, api_hash=api_hash, session_name=session_name)
         self._telegram = TelegramService(self._settings.to_telegram_config())
         self.pop_screen()
-        if self.get_screen("auth") is None:
-            self.install_screen(AuthScreen(), name="auth")
-        self.push_screen("auth")
+        self.switch_screen("auth")
 
     async def _send_message(self) -> None:
         if not self._telegram or self.state.active_chat_id is None:
