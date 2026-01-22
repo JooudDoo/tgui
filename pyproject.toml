@@ -1,0 +1,47 @@
+[project]
+name = "tgui"
+version = "0.1.0"
+description = "Terminal Telegram client with rich media support"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "tgui contributors" }]
+dependencies = [
+  "telethon>=1.35.0",
+  "textual>=0.58.0",
+  "pillow>=10.4.0",
+  "aiosqlite>=0.20.0",
+  "rich>=13.7.1",
+]
+
+[project.optional-dependencies]
+media = [
+  "term-image>=0.7.2",
+]
+dev = [
+  "pyright>=1.1.379",
+  "ruff>=0.6.9",
+]
+
+[project.scripts]
+tgui = "tgui.main:run"
+
+[build-system]
+requires = ["hatchling>=1.24.2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tgui"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
