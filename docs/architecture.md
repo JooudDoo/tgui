@@ -5,6 +5,12 @@
 - Terminal-first Telegram client with images, stickers, reactions, replies, and file sending.
 - Easy setup for contributors and end users via `uv`.
 
+## Current state
+
+- Minimal Textual shell renders a placeholder screen.
+- Telethon client wrapper, state/actions, storage helper, and image decoder stubs exist.
+- Ruff and Pyright configurations are in place for linting and type checking.
+
 ## Proposed stack
 
 - **MTProto client:** Telethon
@@ -26,3 +32,9 @@
 2. Replies + reactions + file sending
 3. Images + static stickers, terminal image protocol detection
 4. Animated stickers (Lottie) + media previews
+
+## Next version (proposed)
+
+1. Add configuration loading for API ID/hash and session path.
+2. Implement login flow + dialog list rendering in the UI.
+3. Add basic message list view with send/reply actions.
