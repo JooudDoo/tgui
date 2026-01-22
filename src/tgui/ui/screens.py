@@ -67,6 +67,7 @@ class ChatScreen(Screen[None]):
     """Main chat screen with chat list and messages."""
 
     def __init__(self) -> None:
+        """Initialize the chat screen widgets."""
         super().__init__()
         self.chat_list = ChatList(id="chat-list")
         self.message_pane = MessagePane()

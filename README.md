@@ -26,6 +26,16 @@ ruff check .
 pyright
 ```
 
+If Pyright reports missing imports locally, ensure the virtual environment is active and
+dependencies are installed:
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[dev]"
+pyright
+```
+
 ### Optional media helpers
 
 For terminal image protocols (Kitty/iTerm2/Sixel), install the optional dependency:

@@ -28,6 +28,17 @@ class MenuPanel(Static):
 class ChatList(OptionList):
     """Option list for available chats."""
 
+    def __init__(self, **kwargs: object) -> None:
+        """Initialize the chat list widget.
+
+        Parameters
+        ----------
+        **kwargs : object
+            Keyword arguments passed to OptionList.
+        """
+        super().__init__(**kwargs)
+        self._chat_ids: list[int] = []
+
     def set_chats(self, chats: list[ChatSummary]) -> None:
         """Replace the chat list options.
 
@@ -37,15 +48,35 @@ class ChatList(OptionList):
             Chat summaries to display.
         """
         self.clear_options()
+        self._chat_ids = []
         for chat in chats:
             label = chat.title or f"Chat {chat.chat_id}"
-            self.add_option(label, id=str(chat.chat_id))
+            self.add_option(label)
+            self._chat_ids.append(chat.chat_id)
+
+    def chat_id_for_index(self, index: int) -> int | None:
+        """Return a chat id for an option index.
+
+        Parameters
+        ----------
+        index : int
+            Option index from the list.
+
+        Returns
+        -------
+        int | None
+            Chat id for the index, if available.
+        """
+        if 0 <= index < len(self._chat_ids):
+            return self._chat_ids[index]
+        return None
 
 
 class MessagePane(Static):
     """Scrollable message view pane."""
 
     def __init__(self) -> None:
+        """Initialize the message pane."""
         super().__init__("")
         self._lines: list[str] = []
 
@@ -87,6 +118,15 @@ class PanelLayout(Static):
     """Composite layout for chats and messages."""
 
     def __init__(self, chat_list: ChatList, message_pane: MessagePane) -> None:
+        """Initialize the panel layout.
+
+        Parameters
+        ----------
+        chat_list : ChatList
+            Chat list widget instance.
+        message_pane : MessagePane
+            Message pane widget instance.
+        """
         super().__init__()
         self._chat_list = chat_list
         self._message_pane = message_pane

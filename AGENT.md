@@ -188,3 +188,5 @@ We can detect terminal capabilities and switch renderer.
 - Keep comments brief and meaningful.
 - Prefer clear, testable boundaries and add tests for new logic.
 - Run ruff, pyright, and pytest before shipping changes.
+- Check ruff and pyright before submitting code and fix any reported issues.
+- Before submitting, run the app and confirm the main flows work.

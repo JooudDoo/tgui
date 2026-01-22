@@ -68,15 +68,38 @@ class MessageEnvelope:
 class TelegramClientProtocol(Protocol):
     """Protocol for the subset of Telethon used by the service."""
 
-    async def start(self, *args: object, **kwargs: object) -> object:
+    async def start(
+        self,
+        phone: Callable[[], str] | str | None = ...,
+        password: Callable[[], str] | str | None = ...,
+        *,
+        bot_token: str | None = None,
+        force_sms: bool = False,
+        code_callback: Callable[[], str | int] | None = None,
+        first_name: str = "New User",
+        last_name: str = "",
+        max_attempts: int = 3,
+    ) -> object:
         """Start the client session.
 
         Parameters
         ----------
-        *args : object
-            Positional arguments forwarded to Telethon.
-        **kwargs : object
-            Keyword arguments forwarded to Telethon.
+        phone : Callable[[], str] | str, optional
+            Phone number or callable that returns it.
+        password : Callable[[], str] | str, optional
+            Password or callable that returns it.
+        bot_token : str | None, optional
+            Bot token to authenticate as a bot.
+        force_sms : bool, optional
+            Force SMS verification.
+        code_callback : Callable[[], str | int] | None, optional
+            Callback returning the login code.
+        first_name : str, optional
+            Default first name for signup flows.
+        last_name : str, optional
+            Default last name for signup flows.
+        max_attempts : int, optional
+            Maximum login attempts.
 
         Returns
         -------
@@ -141,8 +164,8 @@ class TelegramClientProtocol(Protocol):
 
     def add_event_handler(
         self,
-        callback: Callable[[object], Awaitable[None]],
-        event: object,
+        callback: Callable[..., Awaitable[None]],
+        event: object | None = None,
     ) -> None:
         """Register an event handler.
 

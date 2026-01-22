@@ -66,7 +66,7 @@ class FakeClient:
     def add_event_handler(
         self,
         callback: Callable[[object], Awaitable[None]],
-        event: object,
+        event: object | None = None,
     ) -> None:
         self.added_handlers.append((callback, event))
 

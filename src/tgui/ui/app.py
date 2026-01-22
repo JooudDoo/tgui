@@ -89,6 +89,7 @@ class TguiApp(App[None]):
     ]
 
     def __init__(self) -> None:
+        """Initialize the Textual application."""
         super().__init__()
         self.state = AppState()
         self._settings: AppSettings | None = None
@@ -96,18 +97,20 @@ class TguiApp(App[None]):
 
     def on_mount(self) -> None:
         """Initialize settings and show the first screen."""
+        self.install_screen(SettingsScreen(), name="settings")
+        self.install_screen(AuthScreen(), name="auth")
         try:
             self._settings = load_settings(os.environ)
         except ValueError:
-            self.push_screen(SettingsScreen(), name="settings")
+            self.push_screen("settings")
             return
 
         self._telegram = TelegramService(self._settings.to_telegram_config())
-        self.push_screen(AuthScreen(), name="auth")
+        self.push_screen("auth")
 
     def action_open_settings(self) -> None:
         """Open the settings screen."""
-        self.push_screen(SettingsScreen(), name="settings")
+        self.push_screen("settings")
 
     def action_refresh(self) -> None:
         """Refresh chat list from Telegram."""
@@ -124,7 +127,7 @@ class TguiApp(App[None]):
             return
         dialogs = await self._telegram.dialogs()
         self.state.chats = dialogs
-        self.call_from_thread(self._update_chat_list, dialogs)
+        self.call_later(self._update_chat_list, dialogs)
 
     def _update_chat_list(self, dialogs: list) -> None:
         screen = self._chat_screen()
@@ -148,18 +151,20 @@ class TguiApp(App[None]):
             code_callback=_code_callback,
             password=payload.password or None,
         )
-        self._telegram.add_message_listener(
-            lambda message: self._dispatch_message(message),
-        )
-        self.call_from_thread(self._show_chat)
+        async def _on_message(message: MessageEnvelope) -> None:
+            self.call_later(self._handle_message, message)
+
+        self._telegram.add_message_listener(_on_message)
+        self.call_later(self._show_chat)
         await self._refresh_dialogs()
 
     async def _dispatch_message(self, message: MessageEnvelope) -> None:
-        self.call_from_thread(self._handle_message, message)
+        self.call_later(self._handle_message, message)
 
     def _show_chat(self) -> None:
         if self.get_screen("chat") is None:
-            self.push_screen(ChatScreen(), name="chat")
+            self.install_screen(ChatScreen(), name="chat")
+            self.push_screen("chat")
         else:
             self.switch_screen("chat")
 
@@ -171,7 +176,7 @@ class TguiApp(App[None]):
             self.run_worker(self._authenticate(payload), exclusive=True)
             return
         if button_id == "auth-settings":
-            self.push_screen(SettingsScreen(), name="settings")
+            self.push_screen("settings")
             return
         if button_id == "settings-cancel":
             self.pop_screen()
@@ -183,7 +188,7 @@ class TguiApp(App[None]):
             self.run_worker(self._refresh_dialogs())
             return
         if button_id == "menu-settings":
-            self.push_screen(SettingsScreen(), name="settings")
+            self.push_screen("settings")
             return
         if button_id == "menu-quit":
             self.exit()
@@ -193,9 +198,12 @@ class TguiApp(App[None]):
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         """Update active chat selection."""
-        option_id = event.option.id
-        if option_id:
-            self.state.active_chat_id = int(option_id)
+        screen = self._chat_screen()
+        if not screen:
+            return
+        chat_id = screen.chat_list.chat_id_for_index(event.option_index)
+        if chat_id is not None:
+            self.state.active_chat_id = chat_id
 
     def _read_auth_payload(self) -> AuthPayload:
         screen = self.get_screen("auth")
@@ -223,7 +231,8 @@ class TguiApp(App[None]):
         self._telegram = TelegramService(self._settings.to_telegram_config())
         self.pop_screen()
         if self.get_screen("auth") is None:
-            self.push_screen(AuthScreen(), name="auth")
+            self.install_screen(AuthScreen(), name="auth")
+        self.push_screen("auth")
 
     async def _send_message(self) -> None:
         if not self._telegram or self.state.active_chat_id is None:
@@ -232,8 +241,8 @@ class TguiApp(App[None]):
         if not text:
             return
         message = await self._telegram.send_message(self.state.active_chat_id, text)
-        self.call_from_thread(self._handle_message, message)
-        self.call_from_thread(self._clear_message_input)
+        self.call_later(self._handle_message, message)
+        self.call_later(self._clear_message_input)
 
     def _clear_message_input(self) -> None:
         input_box = self.query_one("#message-input", Input)
